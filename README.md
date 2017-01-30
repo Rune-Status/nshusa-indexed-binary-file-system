@@ -22,7 +22,7 @@ The file system stores index files called an **Index**, which can be named. An I
    * IndexedFile("3.dat")
    * IndexedFile("4.dat")
 * Index ("animation")
-    * IndexedFile("1.dat")
+   * IndexedFile("1.dat")
    * IndexedFile("2.dat")
    * IndexedFile("3.dat")
    * IndexedFile("4.dat")
@@ -37,14 +37,72 @@ The file system stores index files called an **Index**, which can be named. An I
    * IndexedFile("humanoid_block.wav")
    * IndexedFile("shield_block.wav")
 * Index("textures")
-    * IndexedFile("0.dat")
-    * IndexedFile("1.dat")
-    * IndexedFile("2.dat")
+   * IndexedFile("0.dat")
+   * IndexedFile("1.dat")
+   * IndexedFile("2.dat")
 * Index("fonts")
-    * IndexedFile("default.ttf")
-    * IndexedFile("calibri.ttf")
+   * IndexedFile("default.ttf")
+   * IndexedFile("calibri.ttf")
 * Index("sprites")
-    * IndexedFile("binary_sprites.dat")
+   * IndexedFile("binary_sprites.dat")
+   
+### Code examples
+### Creating an IndexedFileSystem
+'''java
+		try(IndexedFileSystem fs = IndexedFileSystem.create()) {
+
+			fs.add(Index.create(0, "settings"))
+			.add("item.dat", "data inside item.dat".getBytes())
+			.add("npc.dat", "data inside npc.dat".getBytes())
+			.add("obj.dat", "data inside obj.dat".getBytes());
+			
+			fs.add(Index.create(1, "model"))
+			.add(0, "0.dat")
+			.add(1, "1.dat")
+			.add(2, "2.dat");
+			
+			fs.add(Index.create(2, "animation"))
+			.add(0, "0.dat")
+			.add(1, "1.dat")
+			.add(2, "2.dat");
+			
+			fs.add(Index.create(3, "music"))
+			.add("soundtrack.midi")
+			.add("login_music.midi");
+			
+			fs.add(Index.create(4, "map"))
+			.add(0, "0.dat")
+			.add(1, "1.dat")
+			.add(2, "2.dat");
+			
+			fs.add(Index.create(5, "sound"))
+			.add("low_alch.wav")
+			.add("high_alch.wav")
+			.add("telekenitic_grab.wav")
+			.add("entangle.wav");
+			
+			fs.add(Index.create(6, "sprites"))
+			.add("sprites.dat");
+			
+			fs.encode("./cache.dat");		
+
+			
+		}
+'''
+
+### Reading from an encoded IndexedFileSystem
+'''java
+		try(IndexedFileSystem fs = IndexedFileSystem.decode("./cache.dat")) {
+
+			System.out.println("There are " + fs.getIndexes().size() + " indexes in this file system\n");
+			
+			for (Index index : fs.getIndexes()) {
+				System.out.println(String.format("index=[%d, %s]", index.getId(), index.getName()));				
+				index.getFiles().stream().forEach(it -> System.out.println(String.format("\tfile=[%d, %s]", it.getHeader().getId(), it.getHeader().getName())));
+			}
+			
+		}
+'''
 
 ### Libraries used
 * [Commons Compress 1.13](https://mvnrepository.com/artifact/org.apache.commons/commons-compress)
