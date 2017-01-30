@@ -48,7 +48,8 @@ The file system stores index files called an **Index**, which can be named. An I
    
 ### Code examples
 ### Creating an IndexedFileSystem
-'''java
+```java
+
 		try(IndexedFileSystem fs = IndexedFileSystem.create()) {
 
 			fs.add(Index.create(0, "settings"))
@@ -88,12 +89,14 @@ The file system stores index files called an **Index**, which can be named. An I
 
 			
 		}
-'''
+```
+
 
 ### Reading from an encoded IndexedFileSystem
-'''java
-		try(IndexedFileSystem fs = IndexedFileSystem.decode("./cache.dat")) {
+```java
 
+			try(IndexedFileSystem fs = IndexedFileSystem.decode("./cache.dat")) {
+			
 			System.out.println("There are " + fs.getIndexes().size() + " indexes in this file system\n");
 			
 			for (Index index : fs.getIndexes()) {
@@ -102,7 +105,7 @@ The file system stores index files called an **Index**, which can be named. An I
 			}
 			
 		}
-'''
+```
 
 ### Libraries used
 * [Commons Compress 1.13](https://mvnrepository.com/artifact/org.apache.commons/commons-compress)
