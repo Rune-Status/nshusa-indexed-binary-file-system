@@ -35,6 +35,19 @@ public class Index {
 	}
 	
 	/**
+	 * The method that will copy an existing {@link Index}.
+	 * 
+	 * @return The copied {@link Index}.
+	 */
+	public Index copy() {
+		Index copy = Index.create(id, name);		
+		
+		files.forEach(it -> copy.getFiles().add(it));
+		
+		return copy;
+	}
+	
+	/**
 	 * The method to create an {@link Index}.
 	 * 
 	 * @param id
@@ -43,7 +56,8 @@ public class Index {
 	 * @return The created index.
 	 */
 	public static Index create(int id) {		
-		Index idx = new Index();		
+		Index idx = new Index();
+		idx.id = id;
 		idx.name = "index" + id;
 		return idx;
 	}
