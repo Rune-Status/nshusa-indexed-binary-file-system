@@ -160,9 +160,31 @@ public class IndexedFileSystem implements Closeable {
 		
 		indexes.add(index.getId(), index);
 		
-		changeIndexId(index.getId() + 1, index);
+		changeIndexId(index.getId() + 1);
 		
 		return index;
+	}
+	
+	/**
+	 * The method that removes an {@link Index} based on its identifier.
+	 * 
+	 * @param id
+	 * 		The identifier or position in the collection.
+	 */
+	public void remove(int id) {
+		
+		if (id < 0) {
+			throw new IllegalArgumentException(String.format("id=%d cannot be negative.", id));
+		}
+		
+		if (id > indexes.size()) {
+			throw new IllegalArgumentException(String.format("id=%d is greater than size=%d", id, indexes.size()));
+		}
+		
+		indexes.remove(id);
+		
+		changeIndexId(id);
+		
 	}
 	
 	/**
@@ -174,7 +196,7 @@ public class IndexedFileSystem implements Closeable {
 	 * @param index
 	 * 		The index that was added
 	 */
-	private void changeIndexId(int start, Index index) {
+	private void changeIndexId(int start) {
 		for (int i = start; i < indexes.size(); i++) {
 			
 			Index idx = indexes.get(i);
@@ -236,13 +258,6 @@ public class IndexedFileSystem implements Closeable {
 		}		
 		
 		return indexes.get(id).getFiles().get(file).getPayload();
-	}
-
-	/**
-	 * The method that removes a specified {@link Index}.
-	 */
-	public void remove(Index index) {
-		indexes.remove(index.getId());
 	}
 	
 	/**
