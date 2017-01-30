@@ -13,20 +13,44 @@ import java.util.List;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 
+/**
+ * Represents a file system based on indexes.
+ * 
+ * @author Chad Adams
+ */
 public class IndexedFileSystem implements Closeable {
 	
-	private List<Index> indexes = new ArrayList<>(255);	
+	/**
+	 * The collection of indexes in this file system.
+	 */
+	private final List<Index> indexes = new ArrayList<>(255);	
 	
+	/**
+	 * The private constructor
+	 */
 	private IndexedFileSystem() {
 		
 	}
 	
+	/**
+	 * The method to create a new {@link IndexedFileSystem}.
+	 * 
+	 * @return The indexed file system.
+	 */
 	public static IndexedFileSystem create() {
 		return new IndexedFileSystem();
 	}
 	
-	public static IndexedFileSystem decode(String path) throws IOException {
-		
+	/**
+	 * The method that will decode an already encoded {@link IndexedFileSystem} back into memory.
+	 * 
+	 * @param path
+	 * 		The path of the file to decode.
+	 * 
+	 * @throws IOException, if the file cannot be decoded or does not exist.
+	 * @return The indexed file system.
+	 */
+	public static IndexedFileSystem decode(String path) throws IOException {		
 		IndexedFileSystem fs = IndexedFileSystem.create();
 		
 		try(DataInputStream dis = new DataInputStream(new XZCompressorInputStream(new FileInputStream(Paths.get(path).toFile())))) {
@@ -45,17 +69,21 @@ public class IndexedFileSystem implements Closeable {
 				
 				for (int file = 0; file < files; file++) {
 					
-					int length = dis.readInt();
+					int fileId = dis.readInt();					
 					
-					byte[] data = new byte[length];
+					String fileName = dis.readUTF();					
 					
-					for (int i = 0; i < length; i++) {
+					int fileLength = dis.readInt();					
+					
+					byte[] data = new byte[fileLength];
+					
+					for (int i = 0; i < fileLength; i++) {
 						data[i] = dis.readByte();
 					}
 					
 					Index idx = fs.getIndex(index);
 					
-					idx.add(new IndexedFile(data));
+					idx.add(fileId, fileName, data);
 
 				}
 				
@@ -66,8 +94,17 @@ public class IndexedFileSystem implements Closeable {
 		return fs;
 	}
 	
+	/**
+	 * The method that encodes this {@IndexedFileSystem} into a single binary file.
+	 * 
+	 * @param output
+	 * 		The directory where the file will be created.
+	 * 
+	 * @throws IOException
+	 * 		The exception being thrown if data cannot be written to a file.	 * 		
+	 */
 	public void encode(String output) throws IOException {
-		try(DataOutputStream out = new DataOutputStream(new XZCompressorOutputStream(new FileOutputStream(new File(output))))) {
+		try(DataOutputStream out = new DataOutputStream(new XZCompressorOutputStream(new FileOutputStream(new File(output))))) {			
 			out.writeInt(indexes.size());
 			
 			for(Index idx : indexes) {	
@@ -82,13 +119,17 @@ public class IndexedFileSystem implements Closeable {
 					
 					IndexedFile file = idx.getFiles().get(i);
 					
-					int length = file.getData().length;
+					int fileId = file.getHeader().getId();
+					String name = file.getHeader().getName();
+					int length = file.getPayload().length;
 					
+					out.writeInt(fileId);
+					out.writeUTF(name);
 					out.writeInt(length);
 					
-					byte[] data = file.getData();
+					byte[] payload = file.getPayload();					
 					
-					out.write(data);
+					out.write(payload);
 					
 				}
 				
@@ -96,25 +137,130 @@ public class IndexedFileSystem implements Closeable {
 		}
 	}
 	
-	public void add(Index index) {
+	/**
+	 * The method that adds an {@link Index} to this {@link IndexedFileSystem}.
+	 * 
+	 * @param index
+	 * 		The index to add.
+	 * 
+	 * @return The index that was added.
+	 */
+	public Index add(Index index) {
 		
 		if (indexes.isEmpty()) {
 			indexes.add(index);
-			return;
+			return index;
 		}
 		
-		indexes.add(index.getId() - 1, index);
+		if (index.getId() > indexes.size()) {
+			for (int i = indexes.size(); i < index.getId(); i++) {
+				indexes.add(Index.create(i, "empty"));
+			}
+		}
+		
+		indexes.add(index.getId(), index);
+		
+		changeIndexId(index.getId() + 1, index);
+		
+		return index;
+	}
+	
+	/**
+	 * The method that will change all {@link Index}'s after the index added.
+	 * 
+	 * @param start
+	 * 		The starting index
+	 * 
+	 * @param index
+	 * 		The index that was added
+	 */
+	private void changeIndexId(int start, Index index) {
+		for (int i = start; i < indexes.size(); i++) {
+			
+			Index idx = indexes.get(i);
+			
+			if (idx == null) {
+				continue;
+			}
+			
+			idx.setId(i);
+			
+		}
+	}
+	
+	/**
+	 * Gets the data from an {@link IndexedFile} by its name.
+	 * 
+	 * @param id
+	 * 		The id of the index to read from.
+	 * 
+	 * @param fileName
+	 * 		The name of the indexed file.
+	 * 
+	 * @return The data.
+	 */
+	public byte[] read(int id, String fileName) {
+		
+		if (id < 0) {
+			throw new IllegalArgumentException(String.format("id=%d cannot be negative.", id));
+		}
+		
+		if (id > indexes.size()) {
+			throw new IllegalArgumentException(String.format("id=%d is out of range: %d", id, indexes.size()));
+		}
+		
+		for (IndexedFile file : indexes.get(id).getFiles()) {
+			if (file.getHeader().getName().equalsIgnoreCase(fileName)) {
+				return file.getPayload();
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * The method that will read bytes at a specific {@link IndexedFile}.
+	 * 
+	 * @param id
+	 * 		The id of the index to read from.
+	 * 
+	 * @param file
+	 * 		The id of the file to read.
+	 * 
+	 * @return The bytes read at the specified file.
+	 */
+	public byte[] read(int id, int file) {		
+		
+		if (id > indexes.size() || id < 0) {
+			throw new IllegalArgumentException(String.format("index=[%d] out of range.", id));
+		}		
+		
+		return indexes.get(id).getFiles().get(file).getPayload();
 	}
 
+	/**
+	 * The method that removes a specified {@link Index}.
+	 */
 	public void remove(Index index) {
 		indexes.remove(index.getId());
 	}
 	
+	/**
+	 * The method that retrieves an {@link Index} by its id.
+	 * 
+	 * @param id
+	 * 		The id of the index to get.
+	 * 
+	 * @return The index retrieved.
+	 */
 	public Index getIndex(int id) {
 		return indexes.get(id);
 	}
 	
-	public List<Index> getFiles() {
+	/**
+	 * Gets the collection of {@link Index}'s in this {@link IndexedFileSystem}.
+	 */
+	public List<Index> getIndexes() {
 		return indexes;
 	}
 
