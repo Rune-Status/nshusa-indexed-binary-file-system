@@ -138,7 +138,9 @@ public class IndexedFileSystem implements Closeable {
 	}
 	
 	/**
-	 * The method that adds an {@link Index} to this {@link IndexedFileSystem}.
+	 * The method that adds an {@link Index} to this {@link IndexedFileSystem}. If the target position
+	 * already has a non-empty index all items after the target position get shifted to the right, their id's are increased
+	 * by one. If the target position has an empty index, the index is filled and no items are shifted.
 	 * 
 	 * @param index
 	 * 		The index to add.
@@ -147,7 +149,7 @@ public class IndexedFileSystem implements Closeable {
 	 */
 	public Index add(Index index) {
 		
-		if (indexes.isEmpty()) {
+		if (indexes.isEmpty() || indexes.size() == index.getId()) {
 			indexes.add(index);
 			return index;
 		}
@@ -158,9 +160,19 @@ public class IndexedFileSystem implements Closeable {
 			}
 		}
 		
-		indexes.add(index.getId(), index);
+		Index idx = indexes.get(index.getId());
 		
-		changeIndexId(index.getId() + 1);
+		if (idx.isEmpty()) {
+			
+			indexes.remove(idx.getId());
+			
+			indexes.add(index.getId(), index);
+
+		} else {
+			indexes.add(index.getId(), index);
+			
+			changeIndexId(index.getId() + 1);
+		}
 		
 		return index;
 	}
@@ -181,9 +193,13 @@ public class IndexedFileSystem implements Closeable {
 			throw new IllegalArgumentException(String.format("id=%d is greater than size=%d", id, indexes.size()));
 		}
 		
-		indexes.remove(id);
-		
-		changeIndexId(id);
+		if (id < indexes.size() - 1) {
+			indexes.remove(id);
+			
+			indexes.add(id, Index.create(id, "empty"));	
+		} else {
+			indexes.remove(id);
+		}
 		
 	}
 	

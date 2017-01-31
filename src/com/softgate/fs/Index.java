@@ -412,6 +412,10 @@ public class Index {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public boolean isEmpty() {
+		return files.isEmpty();
+	}
 
 	/**
 	 * Gets the in-memory files in this index.
