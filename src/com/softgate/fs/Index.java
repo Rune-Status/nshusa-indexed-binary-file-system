@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a wrapper for a slot in an array.
@@ -245,13 +246,37 @@ public class Index {
 	}
 	
 	/**
-	 * The method that removes a file in this index with the given id.
+	 * The method that removes a file in this index by it's identifier. If there are elements after the
+	 * item being removed, this method will preserve the slot in the collection. If the item being removed
+	 * is the last item, the item slot will be removed from the collection.
 	 * 
 	 * @param id
 	 * 		The id of the file to remove.
 	 */
-	public void remove(int id) {		
-		files.stream().filter(it -> it.getHeader().getId() == id).findFirst().ifPresent(it -> files.remove(it.getHeader().getId()));		
+	public void remove(int id) {	
+		
+		if (id < 0) {
+			throw new IllegalArgumentException(String.format("id=%d cannot be negative.", id));
+		}
+		
+		if (id < files.size() - 1) {
+			
+			IndexedFile indexedFile = files.get(id);
+			
+			IndexedFile copy = indexedFile.copy();
+			
+			files.remove(id);
+			
+			copy.getHeader().setName("empty");
+			copy.setPayload(new byte[0]);
+			
+			files.add(id, copy);
+			
+		} else {
+			files.remove(id);
+		}
+		
+		
 	}
 	
 	/**
@@ -261,7 +286,7 @@ public class Index {
 	 * 		The name of the file to remove.
 	 */
 	public void remove(String name) {
-		files.stream().filter(it -> it.getHeader().getName().equalsIgnoreCase(name)).findFirst().ifPresent(it -> files.remove(it.getHeader().getId()));		
+		files.stream().filter(it -> it.getHeader().getName().equalsIgnoreCase(name)).findFirst().ifPresent(it -> remove(it.getHeader().getId()));		
 	}
 	
 	/**
@@ -324,7 +349,31 @@ public class Index {
 	 */
 	public void replace(int id, byte[] data) {
 		files.stream().filter(it -> it.getHeader().getId() == id).findFirst().ifPresent(it -> it.getHeader().setId(id));
-	}	
+	}
+	
+	/**
+	 * Gets a file by its identifier.
+	 * 
+	 * @param id
+	 * 		The identifier of the file to get.
+	 * 
+	 * @return The optional describing the result.
+	 */
+	public Optional<IndexedFile> getFile(int id) {
+		return files.stream().filter(it -> it.getHeader().getId() == id).findFirst();		
+	}
+	
+	/**
+	 * Gets a file by its name.
+	 * 
+	 * @param name
+	 * 		The name of the file to get.
+	 * 
+	 * @return The optional describing the result.
+	 */
+	public Optional<IndexedFile> getFile(String name) {
+		return files.stream().filter(it -> it.getHeader().getName().equalsIgnoreCase(name)).findFirst();
+	}
 	
 	/**
 	 * Gets the id of this index.

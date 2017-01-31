@@ -34,6 +34,10 @@ public class IndexedFile {
 		this.header = header;
 		this.payload = payload;
 	}
+	
+	public IndexedFile copy() {		
+		return new IndexedFile(header, payload);
+	}
 
 	public byte[] getPayload() {
 		return payload;
