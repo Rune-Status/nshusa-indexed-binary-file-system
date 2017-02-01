@@ -1,4 +1,5 @@
 package com.softgate.fs;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -95,16 +96,16 @@ public class IndexedFileSystem implements Closeable {
 	}
 	
 	/**
-	 * The method that encodes this {@IndexedFileSystem} into a single binary file.
-	 * 
-	 * @param output
-	 * 		The directory where the file will be created.
+	 * The method that encodes this {@IndexedFileSystem} into an array of bytes.
 	 * 
 	 * @throws IOException
-	 * 		The exception being thrown if data cannot be written to a file.	 * 		
+	 * 		The exception being thrown if data cannot be written to a file.		
 	 */
-	public void encode(String output) throws IOException {
-		try(DataOutputStream out = new DataOutputStream(new XZCompressorOutputStream(new FileOutputStream(new File(output))))) {			
+	public byte[] encode() throws IOException {		
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		try(DataOutputStream out = new DataOutputStream(new XZCompressorOutputStream(baos))) {			
 			out.writeInt(indexes.size());
 			
 			for(Index idx : indexes) {	
@@ -134,7 +135,20 @@ public class IndexedFileSystem implements Closeable {
 				}
 				
 			}
+			
+		}	
+		
+		return baos.toByteArray();		
+	}
+	
+	public void write(File file) throws IOException {		
+		
+		byte[] data = encode();
+		
+		try(FileOutputStream fis = new FileOutputStream(file)) {
+			fis.write(data);
 		}
+		
 	}
 	
 	/**

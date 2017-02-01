@@ -10,7 +10,7 @@ Is an in-memory file system that allows you to pack multiple files into a single
 ### How it works
 The file system stores index files called an **Index**, which can be named. An Index is like a directory they can contain a list of files within it called an **"IndexedFile"**. An IndexedFile contains the actual data of a file. An IndexedFile like an Index can also be named.
 
-* Index ("configs")
+* Index ("archive")
    * IndexedFile("settings.dat")
    * IndexedFile("item.dat")
    * IndexedFile("npc.dat")
@@ -19,19 +19,15 @@ The file system stores index files called an **Index**, which can be named. An I
 * Index ("model")
    * IndexedFile("1.dat")
    * IndexedFile("2.dat")
-   * IndexedFile("3.dat")
-   * IndexedFile("4.dat")
 * Index ("animation")
    * IndexedFile("1.dat")
    * IndexedFile("2.dat")
-   * IndexedFile("3.dat")
-   * IndexedFile("4.dat")
 * Index ("music")
    * IndexedFile("soundtrack.midi")
    * IndexedFile("themesong.midi")
    * IndexedFile("arena.midi")
    * IndexedFile("shortclip.midi")
-* Index ("sound .wav")
+* Index ("sound")
    * IndexedFile("whip_attack.wav")
    * IndexedFile("whip_deflect.wav")
    * IndexedFile("humanoid_block.wav")
@@ -39,10 +35,6 @@ The file system stores index files called an **Index**, which can be named. An I
 * Index("textures")
    * IndexedFile("0.dat")
    * IndexedFile("1.dat")
-   * IndexedFile("2.dat")
-* Index("fonts")
-   * IndexedFile("default.ttf")
-   * IndexedFile("calibri.ttf")
 * Index("sprites")
    * IndexedFile("binary_sprites.dat")
    
@@ -50,6 +42,7 @@ The file system stores index files called an **Index**, which can be named. An I
 ### Creating an IndexedFileSystem
 ```java
 
+	public static void create() throws IOException {
 		try(IndexedFileSystem fs = IndexedFileSystem.create()) {
 
 			fs.add(Index.create(0, "settings"))
@@ -85,10 +78,11 @@ The file system stores index files called an **Index**, which can be named. An I
 			fs.add(Index.create(6, "sprites"))
 			.add("sprites.dat");
 			
-			fs.encode("./cache.dat");		
-
+			fs.write(new File("./cache.dat"));
 			
-		}
+		}	
+		
+	}	
 ```
 
 
