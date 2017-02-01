@@ -303,7 +303,16 @@ public class Index {
 	 * 
 	 */
 	public void replace(int id, File file) throws IOException {		
-		replace(id, Files.readAllBytes(file.toPath()));
+		Optional<IndexedFile> optional = files.stream().filter(it -> it.getHeader().getId() == id).findFirst();
+		
+		if (optional.isPresent()) {
+			
+			IndexedFile index = optional.get();
+			
+			index.setHeader(new IndexedFileHeader(index.getHeader().getId(), file.getName()));
+			index.setPayload(Files.readAllBytes(file.toPath()));			
+			
+		}
 	}
 	
 	/**
@@ -320,7 +329,16 @@ public class Index {
 	 * 
 	 */
 	public void replace(String name, File file) throws IOException {
-		replace(name, Files.readAllBytes(file.toPath()));
+		Optional<IndexedFile> optional = files.stream().filter(it -> it.getHeader().getName().equalsIgnoreCase(name)).findFirst();
+		
+		if (optional.isPresent()) {
+			
+			IndexedFile index = optional.get();
+			
+			index.setHeader(new IndexedFileHeader(index.getHeader().getId(), file.getName()));
+			index.setPayload(Files.readAllBytes(file.toPath()));			
+			
+		}
 	}
 	
 	/**
@@ -348,7 +366,7 @@ public class Index {
 	 * 
 	 */
 	public void replace(int id, byte[] data) {
-		files.stream().filter(it -> it.getHeader().getId() == id).findFirst().ifPresent(it -> it.getHeader().setId(id));
+		files.stream().filter(it -> it.getHeader().getId() == id).findFirst().ifPresent(it -> it.setPayload(data));
 	}
 	
 	/**

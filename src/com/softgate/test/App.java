@@ -1,4 +1,5 @@
 package com.softgate.test;
+import java.io.File;
 import java.io.IOException;
 
 import com.softgate.fs.Index;
@@ -14,7 +15,11 @@ public class App {
 	
 	public static void decode() throws IOException {
 		try(IndexedFileSystem fs = IndexedFileSystem.decode("./cache.dat")) {
-
+			
+			fs.getIndex(6).replace(0, new File("./main_file_sprites.dat"));
+			
+			fs.getIndex(6).getFile(0).ifPresent(it -> System.out.println(it.getHeader().getName()));			
+			
 			System.out.println("There are " + fs.getIndexes().size() + " indexes in this file system\n");
 			
 			for (Index index : fs.getIndexes()) {
